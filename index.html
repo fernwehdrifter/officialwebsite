@@ -1,0 +1,78 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Fernweh Drifter — Travel Beyond Ordinary</title>
+
+  <!-- Royal fonts -->
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700&family=Playfair+Display:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet">
+
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <header class="navbar">
+    <div class="container">
+      <div class="brand">
+        <div class="monogram" aria-hidden="true">FD</div>
+        <h1 class="site-title">Fernweh Drifter</h1>
+      </div>
+
+      <nav class="main-nav" aria-label="Main navigation">
+        <a href="#places">Destinations</a>
+        <a href="#packages">Packages</a>
+        <a href="#videos">Videos</a>
+        <a href="about.html">About</a>
+      </nav>
+    </div>
+  </header>
+
+  <main>
+    <section class="hero" role="img" aria-label="Scenic hero background">
+      <div class="overlay">
+        <h2>Travel Beyond the Ordinary</h2>
+        <p>Luxury escapes, hidden gems, and curated stays for the modern wanderer.</p>
+        <a href="#packages" class="btn">Explore Packages</a>
+      </div>
+    </section>
+
+    <section id="videos" class="video-carousel" aria-labelledby="videosTitle">
+      <h2 id="videosTitle" class="section-title">Travel Inspirations</h2>
+      <div class="carousel-container">
+        <button class="prev" aria-label="Previous video">&#10094;</button>
+        <div class="carousel" id="videoCarousel" aria-live="polite">
+          <!-- slides are injected as .video-slide elements in HTML below for simplicity -->
+          <div class="video-slide" data-video="https://www.youtube.com/embed/Scxs7L0vhZ4"></div>
+          <div class="video-slide" data-video="https://www.youtube.com/embed/jNQXAC9IVRw"></div>
+          <div class="video-slide" data-video="https://www.youtube.com/embed/oHg5SJYRHA0"></div>
+        </div>
+        <button class="next" aria-label="Next video">&#10095;</button>
+      </div>
+    </section>
+
+    <section id="places" class="places-section" aria-labelledby="placesTitle">
+      <h2 id="placesTitle" class="section-title">Our Destinations</h2>
+      <div class="places-grid" id="placesGrid" aria-live="polite"></div>
+    </section>
+
+    <section id="packages" class="packages-section" aria-labelledby="packagesTitle">
+      <h2 id="packagesTitle" class="section-title">Popular Packages</h2>
+      <div class="packages-grid" id="packagesGrid" aria-live="polite"></div>
+    </section>
+  </main>
+
+  <!-- Modal (single, reused) -->
+  <div id="modalContainer" class="modal hidden" role="dialog" aria-modal="true" aria-hidden="true">
+    <div class="modal-content" role="document">
+      <button class="modal-close" aria-label="Close modal">&times;</button>
+      <div id="modalInner" class="modal-inner" tabindex="-1"></div>
+    </div>
+  </div>
+
+  <footer>
+    <p>© 2025 Fernweh Drifter. All Rights Reserved.</p>
+  </footer>
+
+  <script src="js/main.js"></script>
+</body>
+</html>
