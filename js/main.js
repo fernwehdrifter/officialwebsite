@@ -1,37 +1,104 @@
-// main.js - video carousel + places/packages + modal slider
+// js/main.js
+// Replaces existing file: preloads all video iframes and keeps modal/slider logic intact.
+
 document.addEventListener('DOMContentLoaded', () => {
-  /* ----------------- Video carousel (robust) ----------------- */
+  /* ----------------- Video carousel (preload + graceful fallback) ----------------- */
   const carousel = document.getElementById('videoCarousel');
   const videoSlides = carousel ? carousel.querySelectorAll('.video-slide') : [];
   let vCurrent = 0;
 
-  // Ensure carousel element has transition (in case CSS was overridden)
+  // Ensure carousel has proper transition
   if (carousel) {
     carousel.style.transition = carousel.style.transition || 'transform 0.5s ease';
     carousel.style.willChange = 'transform';
   }
 
-  function loadVideo(slide) {
-    if (!slide || slide.querySelector('iframe')) return;
+  // Create iframe and attach, but also handle non-embeddable videos
+  function createIframe(url) {
     const iframe = document.createElement('iframe');
-    // add ?rel=0 to avoid related videos from other channels
-    iframe.src = slide.dataset.video + '?rel=0';
+    // add '?rel=0' to reduce unrelated suggested videos
+    iframe.src = url + (url.includes('?') ? '&rel=0' : '?rel=0');
     iframe.frameBorder = '0';
     iframe.allow = 'accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture';
     iframe.allowFullscreen = true;
-    slide.appendChild(iframe);
+    iframe.style.width = '100%';
+    iframe.style.height = '100%';
+    return iframe;
   }
 
+  // Insert iframe, and if it fails to load (embed blocked) show a fallback
+  function attachVideoToSlide(slide) {
+    if (!slide || slide.querySelector('iframe') || slide.querySelector('.video-fallback')) return;
+
+    const url = slide.dataset.video;
+    if (!url) return;
+
+    // Create a container to measure network/visual failures gracefully
+    const wrapper = document.createElement('div');
+    wrapper.className = 'video-wrapper';
+    wrapper.style.width = '100%';
+    wrapper.style.height = '100%';
+    wrapper.style.background = '#000';
+    wrapper.style.display = 'flex';
+    wrapper.style.alignItems = 'center';
+    wrapper.style.justifyContent = 'center';
+    wrapper.style.position = 'relative';
+    slide.appendChild(wrapper);
+
+    // Create the iframe
+    const iframe = createIframe(url);
+
+    // Some browsers/network/CSP or YouTube settings block embeds and show an error inside iframe.
+    // We attach a short timeout: if after X seconds the iframe hasn't visibly loaded, show a fallback link.
+    let fallbackTimer = setTimeout(() => {
+      // If iframe hasn't been marked as loaded, show fallback link
+      if (!iframe.dataset.loaded) {
+        // remove iframe if present and show fallback
+        if (iframe.parentNode) iframe.parentNode.removeChild(iframe);
+        const fallback = document.createElement('div');
+        fallback.className = 'video-fallback';
+        fallback.style.color = '#fff';
+        fallback.style.textAlign = 'center';
+        fallback.innerHTML = `
+          <div style="max-width:80%;padding:16px;">
+            <p style="margin:0 0 8px;font-weight:700;">Video cannot be embedded</p>
+            <a href="${url}" target="_blank" style="color:#fff;text-decoration:underline;">Watch on YouTube</a>
+          </div>`;
+        wrapper.appendChild(fallback);
+      }
+    }, 2500); // 2.5s wait
+
+    // Listen for iframe load event (not all errors trigger load)
+    iframe.addEventListener('load', () => {
+      // mark as loaded and clear fallback timer
+      iframe.dataset.loaded = '1';
+      clearTimeout(fallbackTimer);
+      // remove any fallback that might have been added
+      const existingFallback = wrapper.querySelector('.video-fallback');
+      if (existingFallback) existingFallback.remove();
+    });
+
+    // Try to append iframe (may still show an internal YouTube error)
+    wrapper.appendChild(iframe);
+  }
+
+  // Preload all slides at start: this prevents an apparently-empty slide when user navigates.
+  // It also reveals non-embeddable videos as a fallback right away.
+  videoSlides.forEach(slide => attachVideoToSlide(slide));
+
+  // Move carousel by percentage of viewport (slides are flex: 0 0 100%)
   function updateVideoCarousel() {
     if (!carousel) return;
     const offset = -vCurrent * 100;
     carousel.style.transform = `translateX(${offset}%)`;
-    loadVideo(videoSlides[vCurrent]);
+    // defensive: if the target slide somehow wasn't preloaded, attach now
+    attachVideoToSlide(videoSlides[vCurrent]);
   }
 
-  // next / prev handlers with safe guards
+  // next / prev handlers
   const nextBtn = document.querySelector('.next');
   const prevBtn = document.querySelector('.prev');
+
   if (nextBtn) nextBtn.addEventListener('click', () => {
     if (!videoSlides.length) return;
     vCurrent = (vCurrent + 1) % videoSlides.length;
@@ -43,11 +110,12 @@ document.addEventListener('DOMContentLoaded', () => {
     updateVideoCarousel();
   });
 
-  // init
-  if (videoSlides.length) loadVideo(videoSlides[0]);
+  // initial position
+  updateVideoCarousel();
   window.addEventListener('resize', updateVideoCarousel);
 
   /* ----------------- Sample data: places & packages ----------------- */
+  // (This portion preserved from your working file - keeps modal slider, etc.)
   const samplePlaces = [
     { name: 'Himalayan Retreat', images: ['https://picsum.photos/seed/himalaya1/1200/800','https://picsum.photos/seed/himalaya2/1200/800','https://picsum.photos/seed/himalaya3/1200/800'], desc: 'Nestled in the serene mountains — cozy homestays with guided treks.' },
     { name: 'Goa Beachfront', images: ['https://picsum.photos/seed/goa1/1200/800','https://picsum.photos/seed/goa2/1200/800'], desc: 'Luxury beachfront homestays with private cabana and sea views.' },
