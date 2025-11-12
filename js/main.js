@@ -1,6 +1,75 @@
 // main.js — carousel fix with proper slide width calculation
 
 document.addEventListener('DOMContentLoaded', () => {
+  /* ----------------- Mobile Menu Toggle ----------------- */
+  const menuToggle = document.getElementById('menuToggle');
+  const mainNav = document.getElementById('mainNav');
+  
+  if (menuToggle && mainNav) {
+    menuToggle.addEventListener('click', () => {
+      menuToggle.classList.toggle('active');
+      mainNav.classList.toggle('active');
+      
+      // Update aria-expanded for accessibility
+      const isExpanded = mainNav.classList.contains('active');
+      menuToggle.setAttribute('aria-expanded', isExpanded);
+    });
+    
+    // Close menu when clicking on a nav link
+    const navLinks = mainNav.querySelectorAll('a');
+    navLinks.forEach(link => {
+      link.addEventListener('click', () => {
+        menuToggle.classList.remove('active');
+        mainNav.classList.remove('active');
+        menuToggle.setAttribute('aria-expanded', 'false');
+      });
+    });
+    
+    // Close menu when clicking outside
+    document.addEventListener('click', (e) => {
+      if (!mainNav.contains(e.target) && !menuToggle.contains(e.target)) {
+        menuToggle.classList.remove('active');
+        mainNav.classList.remove('active');
+        menuToggle.setAttribute('aria-expanded', 'false');
+      }
+    });
+  }
+
+  /* ----------------- Smooth Scroll with Header Offset ----------------- */
+  // Get header height dynamically
+  const header = document.querySelector('.navbar');
+  const headerHeight = header ? header.offsetHeight : 80;
+  const offset = headerHeight + 20; // Header height + 20px padding
+
+  // Handle all anchor links with hash
+  document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+    anchor.addEventListener('click', function(e) {
+      const href = this.getAttribute('href');
+      
+      // Skip if it's just "#" or empty
+      if (!href || href === '#') return;
+      
+      const targetId = href.substring(1);
+      const targetElement = document.getElementById(targetId);
+      
+      if (targetElement) {
+        e.preventDefault();
+        
+        // Calculate position accounting for header
+        const elementPosition = targetElement.getBoundingClientRect().top;
+        const offsetPosition = elementPosition + window.pageYOffset - offset;
+        
+        // Smooth scroll to position
+        window.scrollTo({
+          top: offsetPosition,
+          behavior: 'smooth'
+        });
+        
+        // Update URL hash
+        history.pushState(null, null, href);
+      }
+    });
+  });
   /* ----------------- Video Carousel ----------------- */
   const carousel = document.getElementById('videoCarousel');
   const carouselContainer = document.querySelector('.carousel-container');
@@ -136,7 +205,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const el = document.createElement('article');
     el.className = 'card';
     el.innerHTML = `
-      <img src="${item.images[0]}" alt="${item.name}">
+      <img src="${item.images[0]}" alt="${item.name}" loading="lazy">
       <div class="card-content">
         <h3>${item.name}</h3>
         <p>${item.desc}</p>
@@ -165,13 +234,14 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   function renderModal(item) {
+    // Create slides with data-src for lazy loading
     const slides = activeImages
       .map(
         (img, i) => `
         <div class="slide" data-idx="${i}" style="display:${
           i === activeIndex ? 'block' : 'none'
         }">
-          <img src="${img}" alt="${item.name} ${i + 1}">
+          <img data-src="${img}" alt="${item.name} ${i + 1}" class="modal-img">
         </div>`
       )
       .join('');
@@ -189,12 +259,30 @@ document.addEventListener('DOMContentLoaded', () => {
       </div>
     `;
 
+    // Load the first image immediately
+    loadSlideImage(activeIndex);
+
     document
       .getElementById('prevImg')
       .addEventListener('click', () => showSlide(activeIndex - 1));
     document
       .getElementById('nextImg')
       .addEventListener('click', () => showSlide(activeIndex + 1));
+  }
+
+  // Function to load image for a specific slide
+  function loadSlideImage(index) {
+    const slides = modalInner.querySelectorAll('.slide');
+    if (slides[index]) {
+      const img = slides[index].querySelector('img');
+      const dataSrc = img.getAttribute('data-src');
+      
+      // Only load if not already loaded
+      if (dataSrc && !img.src) {
+        img.src = dataSrc;
+        img.removeAttribute('data-src');
+      }
+    }
   }
 
   function showSlide(i) {
@@ -204,6 +292,15 @@ document.addEventListener('DOMContentLoaded', () => {
     const slides = modalInner.querySelectorAll('.slide');
     slides.forEach(s => (s.style.display = 'none'));
     slides[activeIndex].style.display = 'block';
+    
+    // Load current image + preload next and previous for smooth experience
+    loadSlideImage(activeIndex);
+    
+    // Preload adjacent images
+    const nextIndex = (activeIndex + 1) % activeImages.length;
+    const prevIndex = (activeIndex - 1 + activeImages.length) % activeImages.length;
+    loadSlideImage(nextIndex);
+    loadSlideImage(prevIndex);
   }
 
   closeBtn.addEventListener('click', closeModal);
